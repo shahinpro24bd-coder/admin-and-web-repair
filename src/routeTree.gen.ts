@@ -10,33 +10,102 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as PageRouteImport } from './routes/$page'
+import { Route as AdminRouteImport } from './routes/admin'
+import { Route as SitePageRouteImport } from './routes/site.$page'
+import { Route as ApiPublicAppointmentRouteImport } from './routes/api/public/appointment'
+import { Route as ApiPublicImgSplatRouteImport } from './routes/api/public/img.$'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PageRoute = PageRouteImport.update({
+  id: '/$page',
+  path: '/$page',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitePageRoute = SitePageRouteImport.update({
+  id: '/site/$page',
+  path: '/site/$page',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicAppointmentRoute = ApiPublicAppointmentRouteImport.update({
+  id: '/api/public/appointment',
+  path: '/api/public/appointment',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicImgSplatRoute = ApiPublicImgSplatRouteImport.update({
+  id: '/api/public/img/$',
+  path: '/api/public/img/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/$page': typeof PageRoute
+  '/admin': typeof AdminRoute
+  '/site/$page': typeof SitePageRoute
+  '/api/public/appointment': typeof ApiPublicAppointmentRoute
+  '/api/public/img/$': typeof ApiPublicImgSplatRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/$page': typeof PageRoute
+  '/admin': typeof AdminRoute
+  '/site/$page': typeof SitePageRoute
+  '/api/public/appointment': typeof ApiPublicAppointmentRoute
+  '/api/public/img/$': typeof ApiPublicImgSplatRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/$page': typeof PageRoute
+  '/admin': typeof AdminRoute
+  '/site/$page': typeof SitePageRoute
+  '/api/public/appointment': typeof ApiPublicAppointmentRoute
+  '/api/public/img/$': typeof ApiPublicImgSplatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/$page'
+    | '/admin'
+    | '/site/$page'
+    | '/api/public/appointment'
+    | '/api/public/img/$'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/$page'
+    | '/admin'
+    | '/site/$page'
+    | '/api/public/appointment'
+    | '/api/public/img/$'
+  id:
+    | '__root__'
+    | '/'
+    | '/$page'
+    | '/admin'
+    | '/site/$page'
+    | '/api/public/appointment'
+    | '/api/public/img/$'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  PageRoute: typeof PageRoute
+  AdminRoute: typeof AdminRoute
+  SitePageRoute: typeof SitePageRoute
+  ApiPublicAppointmentRoute: typeof ApiPublicAppointmentRoute
+  ApiPublicImgSplatRoute: typeof ApiPublicImgSplatRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +117,51 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/$page': {
+      id: '/$page'
+      path: '/$page'
+      fullPath: '/$page'
+      preLoaderRoute: typeof PageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/site/$page': {
+      id: '/site/$page'
+      path: '/site/$page'
+      fullPath: '/site/$page'
+      preLoaderRoute: typeof SitePageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/appointment': {
+      id: '/api/public/appointment'
+      path: '/api/public/appointment'
+      fullPath: '/api/public/appointment'
+      preLoaderRoute: typeof ApiPublicAppointmentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/img/$': {
+      id: '/api/public/img/$'
+      path: '/api/public/img/$'
+      fullPath: '/api/public/img/$'
+      preLoaderRoute: typeof ApiPublicImgSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  PageRoute: PageRoute,
+  AdminRoute: AdminRoute,
+  SitePageRoute: SitePageRoute,
+  ApiPublicAppointmentRoute: ApiPublicAppointmentRoute,
+  ApiPublicImgSplatRoute: ApiPublicImgSplatRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

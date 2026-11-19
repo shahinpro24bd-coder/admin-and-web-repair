@@ -28,3 +28,19 @@ use the editor.
   own key and store it in Secrets.
 - **Secrets.** Lovable manages them. Do not put secret values in the repo.
 <!-- LOVABLE:END -->
+
+- Vercel builds use Nitro's Vercel server preset; other builds retain the platform default, because public HTML requires request-time language rendering.
+- Language-switch and internal navigation URLs carry an explicit language; cookie-selected responses are private to prevent cross-language CDN/browser cache reuse.
+- Public site pages live in `src/site/*.html` (English source) and `src/lib/site-content/fallback.generated.json` (per-language text keyed by text hash); edit both together so every language stays in sync.
+- Site images and videos are self-hosted under `public/img` and `public/reels`, so the site works on any host without Lovable asset URLs.
+- Browser-saved admin edits use versioned storage keys; bump the version when content is replaced wholesale so stale edits never re-apply.
+
+<!-- AGENT-MEMORY:BEGIN -->
+- The public site's visual design lives in `public/redesign.css`, linked last in every `src/site/*.html` head; restyle there instead of editing the older per-page CSS so one layer controls the look.
+- Restructure page markup freely but keep every visible text string byte-identical, because translations are keyed by a hash of the English text.
+- Home hero/intro and About hero/intro use the `lx-`, `ax-`, `ah-`, `ab2-` class prefixes (V5 block at the end of `public/redesign.css`); never reuse `hv-`, `hx-`, `hab-`, `abx-`, because dead legacy rules for those prefixes remain earlier in the file.
+- Site-wide motion lives in `public/delight.css` + `public/js/delight.js`, injected by `render.server.ts` (skipped in edit mode); the script must stay idempotent per `<body>` and never alter text, because instant page swaps re-run it and translations are keyed by text.
+- Every inner page uses the About-style `.ah` header and all pages share one `.ft` footer markup (V6 block in `public/redesign.css`); copy it verbatim between pages and reuse only strings that already have translations, so every language stays complete.
+<!-- AGENT-MEMORY:END -->
+- Admin data (site edits, appointment requests, patients, plans, appointments, invoices) lives in Lovable Cloud behind the `has_role(admin)` RLS check; the admin page signs in with Cloud auth, never a browser-stored password, because patient records must stay private.
+- Admin page edits are stored in `site_content` (`texts` per language, `images`, `contact`) and merged on the server in `src/lib/site-content/server.ts`, so every visitor sees them; uploaded photos go to the private `site-images` bucket and are served through `/api/public/img/*`.

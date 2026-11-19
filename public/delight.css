@@ -1,0 +1,231 @@
+/* =====================================================================
+   Delight layer — playful motion & polish for every public page.
+   Loaded after redesign.css. Uses only individual transform properties
+   (translate / scale / rotate) so it composes with existing transforms.
+   Everything is switched off for prefers-reduced-motion.
+   ===================================================================== */
+:root {
+  --dl-teal: var(--rd-teal, #17605c);
+  --dl-ink: var(--rd-ink, #0b2e30);
+  --dl-apricot: var(--rd-apricot, #e89a6e);
+  --dl-apricot-soft: var(--rd-apricot-soft, #fbe9de);
+  --dl-mint: var(--rd-mint, #e3efeb);
+  --dl-spring: cubic-bezier(.34, 1.56, .64, 1);
+  --dl-soft: cubic-bezier(.22, 1, .36, 1);
+  --dl-grad: linear-gradient(90deg, #f0b089, #e89a6e 40%, #2f8c85 75%, #17605c);
+}
+
+/* ---------- Scroll progress ribbon ---------- */
+.dl-progress {
+  position: fixed; inset: 0 0 auto 0; height: 4px; z-index: 2000;
+  background: var(--dl-grad);
+  transform-origin: 0 50%; transform: scaleX(0);
+  border-radius: 0 4px 4px 0;
+  box-shadow: 0 0 12px rgba(232, 154, 110, .6);
+  pointer-events: none;
+}
+[dir="rtl"] .dl-progress { transform-origin: 100% 50%; border-radius: 4px 0 0 4px; }
+
+/* ---------- Pretty scrollbar ---------- */
+html.dl-on { scrollbar-color: var(--dl-apricot) transparent; scrollbar-width: thin; }
+html.dl-on::-webkit-scrollbar { width: 10px; }
+html.dl-on::-webkit-scrollbar-thumb { background: linear-gradient(var(--dl-apricot), var(--dl-teal)); border-radius: 10px; border: 2px solid var(--rd-cream, #fbf9f5); }
+
+/* ---------- Scroll reveal ---------- */
+.dl-on .dl-hide {
+  opacity: 0;
+  translate: 0 34px;
+  scale: .94;
+  filter: blur(8px);
+}
+.dl-on .dl-hide.dl-pop { translate: 0 18px; scale: .82; rotate: -2deg; }
+.dl-on .dl-hide.dl-side { translate: -40px 0; scale: 1; }
+[dir="rtl"].dl-on .dl-hide.dl-side, [dir="rtl"] .dl-on .dl-hide.dl-side { translate: 40px 0; }
+.dl-on .dl-hide.dl-title {
+  translate: 0 40px; scale: 1; filter: blur(4px);
+  clip-path: inset(100% -40% -40% -40%);
+}
+.dl-on .dl-hide.dl-in {
+  opacity: 1; translate: 0 0; scale: 1; rotate: 0deg; filter: blur(0);
+  clip-path: inset(-40% -40% -40% -40%);
+}
+.dl-on .dl-reveal {
+  transition:
+    opacity .9s var(--dl-soft),
+    translate 1s var(--dl-spring),
+    scale 1s var(--dl-spring),
+    rotate 1s var(--dl-spring),
+    filter .9s var(--dl-soft),
+    clip-path 1.1s var(--dl-soft) !important;
+  transition-delay: var(--dl-d, 0ms) !important;
+}
+
+/* ---------- Cards: lift, glow spotlight & shine sweep ---------- */
+.dl-on .dl-card {
+  transition:
+    translate .55s var(--dl-spring), scale .55s var(--dl-spring),
+    box-shadow .45s ease, background-color .35s ease, border-color .35s ease,
+    color .35s ease, transform .5s ease;
+}
+.dl-on .dl-card:hover { translate: 0 -8px; }
+.dl-on .dl-card:active { scale: .985; }
+.dl-glow {
+  position: absolute; inset: 0; border-radius: inherit; overflow: hidden;
+  pointer-events: none; z-index: 3; opacity: 0;
+  transition: opacity .4s ease;
+  background: radial-gradient(260px circle at var(--mx, 50%) var(--my, 50%), rgba(255, 255, 255, .22), transparent 60%);
+}
+.dl-glow::after {
+  content: ""; position: absolute; top: -20%; bottom: -20%; width: 40%;
+  left: -60%;
+  background: linear-gradient(105deg, transparent, rgba(255, 255, 255, .55), transparent);
+  transform: skewX(-18deg);
+}
+.dl-card:hover > .dl-glow { opacity: 1; }
+.dl-card:hover > .dl-glow::after { animation: dl-sweep 1.1s var(--dl-soft) both; }
+.dl-card.dl-light > .dl-glow { background: radial-gradient(260px circle at var(--mx, 50%) var(--my, 50%), rgba(232, 154, 110, .16), transparent 60%); }
+
+/* Images inside cards breathe on hover */
+.dl-on .dl-zoom { transition: scale 1.1s var(--dl-soft), filter .6s ease; }
+.dl-on .dl-card:hover .dl-zoom { scale: 1.07; filter: saturate(1.08); }
+
+/* Icons inside cards: gentle bob, wiggle on hover */
+.dl-on .dl-icon { animation: dl-bob 4.2s ease-in-out infinite; animation-delay: var(--dl-i, 0s); }
+.dl-on .dl-card:hover .dl-icon { animation: dl-wiggle .7s var(--dl-spring) both; }
+
+/* Twinkling review stars */
+.dl-on i.fa-star, .dl-on .tc-stars i { display: inline-block; animation: dl-twinkle 2.8s ease-in-out infinite; }
+.dl-on .tc-stars i:nth-child(2), .dl-on i.fa-star:nth-child(2) { animation-delay: .18s; }
+.dl-on .tc-stars i:nth-child(3), .dl-on i.fa-star:nth-child(3) { animation-delay: .36s; }
+.dl-on .tc-stars i:nth-child(4), .dl-on i.fa-star:nth-child(4) { animation-delay: .54s; }
+.dl-on .tc-stars i:nth-child(5), .dl-on i.fa-star:nth-child(5) { animation-delay: .72s; }
+
+/* ---------- Buttons: squish, glossy sweep, wiggly arrow ---------- */
+.dl-on .dl-btn { overflow: hidden; isolation: isolate; }
+.dl-on .btn:not(.back-to-top):not(.btn-link) {
+  transition: translate .4s var(--dl-spring), scale .35s var(--dl-spring), box-shadow .35s ease, background-color .3s ease, color .3s ease, border-color .3s ease;
+}
+.dl-on .btn:not(.back-to-top):not(.btn-link):hover { translate: 0 -3px; }
+.dl-on .btn:not(.btn-link):active { scale: .94; }
+.dl-gloss {
+  position: absolute; inset: 0; pointer-events: none; border-radius: inherit; overflow: hidden; z-index: 1;
+}
+.dl-gloss::before {
+  content: ""; position: absolute; top: -10%; bottom: -10%; left: -70%; width: 45%;
+  background: linear-gradient(105deg, transparent, rgba(255, 255, 255, .6), transparent);
+  transform: skewX(-20deg);
+  animation: dl-gloss 5.5s ease-in-out infinite;
+  animation-delay: var(--dl-i, 0s);
+}
+.btn:hover > .dl-gloss::before { animation: dl-sweep .9s var(--dl-soft) both; }
+.dl-on .btn:hover i.fa-arrow-right, .dl-on .btn:hover .bi-arrow-right,
+.dl-on a:hover > i.fa-arrow-right { animation: dl-nudge .8s ease-in-out infinite; }
+
+/* Back to top: little bounce */
+.dl-on .back-to-top { animation: dl-bob 2.6s ease-in-out infinite; }
+.dl-on .back-to-top:hover { animation: dl-jelly .7s var(--dl-spring) both; }
+
+/* ---------- Navigation ---------- */
+.dl-on .navbar .nav-link { transition: scale .35s var(--dl-spring), color .25s ease, background-color .25s ease; }
+.dl-on .navbar .nav-link:hover { scale: 1.08; }
+.dl-on .navbar .nav-link:active { scale: .94; }
+.dl-on .navbar-brand img { transition: rotate .6s var(--dl-spring), scale .6s var(--dl-spring); }
+.dl-on .navbar-brand:hover img { rotate: -10deg; scale: 1.08; }
+.dl-on .navbar-brand img { animation: dl-logo 7s ease-in-out infinite; }
+
+/* ---------- Footer ---------- */
+.dl-on .footer a { transition: translate .35s var(--dl-spring), color .25s ease, scale .35s var(--dl-spring); }
+.dl-on .footer .btn-link:hover { translate: 6px 0; }
+[dir="rtl"] .dl-on .footer .btn-link:hover, [dir="rtl"].dl-on .footer .btn-link:hover { translate: -6px 0; }
+.dl-on .footer .btn-square:hover, .dl-on .footer .btn-social:hover, .dl-on .footer a[class*="social"]:hover { scale: 1.18; rotate: -8deg; }
+
+/* ---------- Forms ---------- */
+.dl-on input:not([type="checkbox"]):not([type="radio"]), .dl-on textarea, .dl-on select {
+  transition: box-shadow .35s ease, border-color .3s ease, translate .35s var(--dl-spring), background-color .3s ease;
+}
+.dl-on input:not([type="checkbox"]):not([type="radio"]):focus, .dl-on textarea:focus, .dl-on select:focus {
+  box-shadow: 0 10px 24px -14px rgba(232, 154, 110, .9) !important;
+  translate: 0 -2px;
+}
+
+/* ---------- Shimmering accent words in headings ---------- */
+.dl-on .dl-shimmer {
+  background-image: linear-gradient(100deg, var(--dl-teal) 0%, #2f8c85 30%, var(--dl-apricot) 50%, #2f8c85 70%, var(--dl-teal) 100%);
+  background-size: 250% 100%;
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: dl-shimmer 6s ease-in-out infinite;
+  padding-inline-end: .06em;
+}
+.dl-on .dl-shimmer.dl-on-dark {
+  background-image: linear-gradient(100deg, var(--dl-apricot) 0%, #f6c9a8 30%, #ffffff 50%, #f6c9a8 70%, var(--dl-apricot) 100%);
+}
+
+/* ---------- Floating decorations ---------- */
+.dl-deco {
+  position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 0;
+  border-radius: inherit;
+}
+.dl-deco > span {
+  position: absolute; display: block; color: var(--dl-teal); opacity: .22;
+  width: var(--s, 22px); height: var(--s, 22px);
+  animation: dl-float var(--t, 9s) ease-in-out infinite;
+  animation-delay: var(--dl-i, 0s);
+}
+.dl-deco > span:nth-child(even) { color: var(--dl-apricot); opacity: .32; }
+.dl-deco.dl-dark > span { color: #ffffff; opacity: .14; }
+.dl-deco.dl-dark > span:nth-child(even) { color: var(--dl-apricot); opacity: .4; }
+.dl-deco > span svg { width: 100%; height: 100%; display: block; fill: currentColor; }
+.dl-deco > span.dl-sparkle { animation-name: dl-twinkle-float; }
+.dl-deco > span.dl-ring { border: 2px solid currentColor; border-radius: 50%; }
+.dl-deco > span.dl-ring svg { display: none; }
+
+/* ---------- Click sparkles ---------- */
+.dl-burst { position: fixed; left: 0; top: 0; width: 0; height: 0; pointer-events: none; z-index: 2001; }
+.dl-burst i {
+  position: absolute; left: -5px; top: -5px; width: 10px; height: 10px; display: block;
+  background: var(--c, #e89a6e);
+  clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);
+  animation: dl-burst .75s var(--dl-soft) forwards;
+}
+.dl-burst i.dl-dot { clip-path: none; border-radius: 50%; width: 7px; height: 7px; left: -3.5px; top: -3.5px; }
+
+/* ---------- Keyframes ---------- */
+@keyframes dl-shimmer { 0%, 100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+@keyframes dl-sweep { from { left: -60%; } to { left: 130%; } }
+@keyframes dl-gloss { 0%, 70% { left: -70%; } 100% { left: 140%; } }
+@keyframes dl-bob { 0%, 100% { translate: 0 0; } 50% { translate: 0 -6px; } }
+@keyframes dl-wiggle {
+  0% { rotate: 0deg; scale: 1; } 25% { rotate: -12deg; scale: 1.15; }
+  50% { rotate: 10deg; scale: 1.12; } 75% { rotate: -5deg; scale: 1.06; } 100% { rotate: 0deg; scale: 1.08; }
+}
+@keyframes dl-twinkle { 0%, 100% { scale: 1; opacity: 1; } 45% { scale: 1.35; opacity: .75; rotate: 12deg; } 60% { scale: .92; rotate: 0deg; } }
+@keyframes dl-nudge { 0%, 100% { translate: 0 0; } 50% { translate: 4px 0; } }
+@keyframes dl-jelly { 0% { scale: 1 1; } 30% { scale: 1.2 .85; } 50% { scale: .9 1.12; } 70% { scale: 1.06 .96; } 100% { scale: 1 1; } }
+@keyframes dl-logo { 0%, 86%, 100% { rotate: 0deg; } 90% { rotate: -9deg; } 94% { rotate: 7deg; } 97% { rotate: -3deg; } }
+@keyframes dl-float {
+  0%, 100% { translate: 0 0; rotate: 0deg; }
+  33% { translate: 8px -16px; rotate: 10deg; }
+  66% { translate: -6px -6px; rotate: -8deg; }
+}
+@keyframes dl-twinkle-float {
+  0%, 100% { translate: 0 0; scale: .7; rotate: 0deg; }
+  50% { translate: 0 -14px; scale: 1.15; rotate: 45deg; }
+}
+@keyframes dl-burst {
+  0% { translate: 0 0; scale: 1; opacity: 1; rotate: 0deg; }
+  100% { translate: var(--x) var(--y); scale: .2; opacity: 0; rotate: 180deg; }
+}
+
+/* ---------- Small screens: calmer ---------- */
+@media (max-width: 767px) {
+  .dl-deco > span:nth-child(n+4) { display: none; }
+  .dl-on .dl-card:hover { translate: 0 -4px; }
+}
+
+/* ---------- Respect reduced motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .dl-on .dl-hide { opacity: 1 !important; translate: none !important; scale: none !important; filter: none !important; clip-path: none !important; }
+  .dl-on *, .dl-deco > span, .dl-gloss::before { animation: none !important; }
+  .dl-burst, .dl-deco { display: none !important; }
+}
