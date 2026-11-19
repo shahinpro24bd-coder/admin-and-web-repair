@@ -2846,3 +2846,20 @@ html body .ft-bottom a:hover { background-size: 100% 1px; }
   html body .lx-float-badge { bottom: -5%; inset-inline-start: 50%; translate: -50% 0; white-space: nowrap; }
   html[dir="rtl"] body .lx-float-badge { translate: 50% 0; }
 }
+
+/* =====================================================================
+   V7 — speed: quicker hero entrance and cheaper looping effects.
+   Floating (bobbing) cards drop their background blur: they are almost
+   opaque anyway, and a moving blur forces the phone to redraw every frame.
+   ===================================================================== */
+html body .lx-in { animation-duration: .7s; animation-delay: calc(var(--d, 0s) * .55); }
+html body .lx-line > span { animation-duration: .75s; animation-delay: calc(var(--d, 0s) * .55); }
+html body .lx-line-accent > span {
+  animation: lxRise .75s cubic-bezier(.2,.8,.2,1) calc(var(--d, 0s) * .55) forwards, lxGrad 6s ease-in-out 1s 2;
+}
+html body .lx-visual, html body .ah-visual { animation-duration: .8s; animation-delay: .1s; }
+html body .lx-aurora { will-change: transform; }
+html body .lx-float, html body .ab2-card, html body .ax-call {
+  backdrop-filter: none; -webkit-backdrop-filter: none;
+}
+html body .lx-float, html body .ab2-card, html body .ax-call { background: rgba(251,249,245,.97); }

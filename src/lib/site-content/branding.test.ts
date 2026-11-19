@@ -6,7 +6,7 @@ import { getContentSnapshot } from "./server";
 
 describe("self-hosted site logo", () => {
   it("uses Dr. Lama's bundled logo rather than a hosting-specific proxy", () => {
-    expect(SITE_LOGO_URL).toBe("/img/dr-lama-logo.png");
+    expect(SITE_LOGO_URL).toBe("/img/dr-lama-logo.webp");
     expect(existsSync(resolve("public", SITE_LOGO_URL.slice(1)))).toBe(true);
   });
 

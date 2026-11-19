@@ -23,9 +23,6 @@
     if (m.length > 3 && parseFloat(m[3]) === 0) return null;
     return (0.2126 * m[0] + 0.7152 * m[1] + 0.0722 * m[2]) / 255;
   }
-  function ensurePositioned(el) {
-    if (cs(el).position === "static") el.style.position = "relative";
-  }
   var SKIP = ".sticky-top, .navbar, .lx, .ah, .owl-carousel, .dl-deco, .dl-glow, .modal, script, style, iframe[src*='instagram']";
 
   /* ---------- shapes ---------- */
@@ -49,207 +46,254 @@
   bar.setAttribute("aria-hidden", "true");
   body.appendChild(bar);
 
-  if (reduce) return; // static polish only
-
   /* ---------- sections ---------- */
   var sections = Array.prototype.filter.call(body.children, function (el) {
     if (!/^(SECTION|DIV|FOOTER)$/.test(el.tagName)) return false;
-    if (el.matches(".sticky-top, .back-to-top, .dl-progress, .modal")) return false;
-    return el.offsetHeight > 160;
+    return !el.matches(".sticky-top, .back-to-top, .dl-progress, .modal");
   });
 
-  var pending = [];
-  var vh = innerHeight;
-
-  function hide(el, kind, delay) {
-    if (el.classList.contains("dl-hide") || el.closest(".dl-hide")) return;
-    var r = el.getBoundingClientRect();
-    if (r.top < vh * 0.9 && r.bottom > 0) return; // already on screen: leave it be
-    if (cs(el).animationName !== "none") return;  // has its own entrance
-    el.classList.add("dl-hide", "dl-reveal");
-    if (kind) el.classList.add(kind);
-    if (delay) el.style.setProperty("--dl-d", delay + "ms");
-    pending.push(el);
+  /* Looping decorations only run while their section is on screen, so the
+     browser never spends time animating things nobody can see. */
+  if ("IntersectionObserver" in window) {
+    var loopIo = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) { e.target.classList.toggle("dl-idle", !e.isIntersecting); });
+    }, { rootMargin: "120px 0px" });
+    sections.forEach(function (el) { loopIo.observe(el); });
   }
 
-  function isVisualCard(el) {
-    var s = cs(el);
-    var bg = lum(s.backgroundColor);
-    return bg !== null || s.backgroundImage !== "none" || parseFloat(s.borderTopWidth) > 0 || s.boxShadow !== "none";
-  }
-
-  function unwrap(el) {
-    // Grid columns usually wrap the real card: descend to it.
-    while (el.children.length === 1) {
-      var c = el.children[0];
-      if (Math.abs(c.offsetWidth - el.offsetWidth) > 40 || c.offsetHeight < el.offsetHeight * 0.7) break;
-      el = c;
-    }
-    return el;
-  }
-
-  function makeCard(card, i) {
-    if (card.classList.contains("dl-card")) return;
-    card.classList.add("dl-card");
-    ensurePositioned(card);
-    var glow = document.createElement("span");
-    glow.className = "dl-glow";
-    glow.setAttribute("aria-hidden", "true");
-    card.appendChild(glow);
-    var l = lum(cs(card).backgroundColor);
-    if (l !== null && l > 0.6) card.classList.add("dl-light");
-    // icon bubbles bob gently
-    var icon = card.querySelector("[class*='icon']:not(i):not(svg):not(img), .btn-square, .tc-avatar");
-    if (!icon) icon = card.querySelector("i.fa, i.fas, i.far, i.fab, i.bi");
-    if (icon && !icon.closest(".btn")) {
-      icon.classList.add("dl-icon");
-      icon.style.setProperty("--dl-i", (i % 5) * -0.6 + "s");
-    }
-    card.querySelectorAll("img").forEach(function (img) {
-      var p = img.parentElement;
-      if (p && p !== card && cs(p).overflow === "hidden") img.classList.add("dl-zoom");
-      else if (p === card && cs(card).overflow === "hidden") img.classList.add("dl-zoom");
-    });
-  }
-
-  sections.forEach(function (section, sIndex) {
-    if (section.matches(".lx, .ah")) return;
-
-    // 1) groups of similar boxes -> staggered cards
-    section.querySelectorAll("*").forEach(function (el) {
-      if (el.closest(SKIP) || el.closest(".dl-card")) return;
-      var kids = el.children;
-      if (kids.length < 2) return;
-      var sig = {};
-      var max = 0;
-      for (var k = 0; k < kids.length; k++) {
-        var key = kids[k].tagName + "." + (kids[k].classList[0] || "");
-        sig[key] = (sig[key] || 0) + 1;
-        if (sig[key] > max) max = sig[key];
-      }
-      if (max < 2 || max / kids.length < 0.6) return;
-      var ok = 0;
-      for (var j = 0; j < kids.length; j++) {
-        if (kids[j].offsetWidth >= 150 && kids[j].offsetHeight >= 70 && !/^(P|H\d|SPAN|A|LI|I|IMG|BR)$/.test(kids[j].tagName)) ok++;
-      }
-      if (ok < 2 || ok / kids.length < 0.6) return;
-      var visual = 0;
-      var cards = [];
-      for (var n = 0; n < kids.length; n++) {
-        var c = unwrap(kids[n]);
-        cards.push(c);
-        if (isVisualCard(c)) visual++;
-      }
-      cards.forEach(function (c, idx) {
-        var isCard = visual >= 2 && isVisualCard(c) && !c.closest(".reels-track, [class*='reel'] .owl-stage");
-        if (isCard) makeCard(c, idx);
-        hide(kids[idx], isCard ? "dl-pop" : null, (idx % 6) * 110);
-      });
-    });
-
-    // 2) headings
-    section.querySelectorAll("h1, h2").forEach(function (h) {
-      if (h.closest(SKIP) || h.closest(".dl-card, .dl-hide")) return;
-      hide(h, "dl-title", 0);
-    });
-    // 3) supporting text, buttons, media
-    section.querySelectorAll("h3, h4, h5, h6, p, .btn, ul, img, iframe, video, .before-after-wrapper, form").forEach(function (el) {
-      if (el.closest(SKIP) || el.closest(".dl-card, .dl-hide")) return;
-      if (el.tagName === "IMG" || el.tagName === "IFRAME" || el.tagName === "VIDEO") hide(el, "dl-pop", 120);
-      else hide(el, null, el.tagName === "P" ? 120 : el.classList.contains("btn") ? 220 : 60);
-    });
-
-    // 4) floating decorations
-    var host = (section.matches(".ft") && section.querySelector(".ft-tile")) || section;
-    var dark = (function () {
-      var l = lum(cs(host).color);
-      return l !== null && l > 0.6;
-    })();
-    var deco = document.createElement("div");
-    deco.className = "dl-deco" + (dark ? " dl-dark" : "");
-    deco.setAttribute("aria-hidden", "true");
-    var count = 6;
-    for (var d = 0; d < count; d++) {
-      var shape = SHAPES[(d + sIndex) % SHAPES.length];
-      var s = document.createElement("span");
-      s.className = shape[0];
-      s.innerHTML = shape[1];
-      var left = d % 2 === 0 ? 1 + rand() * 3.5 : 95.5 - rand() * 3.5;
-      s.style.left = left + "%";
-      s.style.top = (8 + (d / count) * 80 + rand() * 6) + "%";
-      s.style.setProperty("--s", Math.round(14 + rand() * 20) + "px");
-      s.style.setProperty("--t", (7 + rand() * 6).toFixed(1) + "s");
-      s.style.setProperty("--dl-i", (-rand() * 8).toFixed(1) + "s");
-      deco.appendChild(s);
-    }
-    ensurePositioned(host);
-    host.insertBefore(deco, host.firstChild);
-  });
-
-  /* ---------- shimmering accent words ---------- */
-  document.querySelectorAll("h1 span, h2 span, h1 em, h2 em, h3 em").forEach(function (sp) {
-    if (sp.closest(".lx, .ah, .navbar, .dl-deco") || sp.children.length) return;
-    var styled = sp.classList.contains("text-primary") || cs(sp).fontStyle === "italic" || sp.tagName === "EM";
-    if (!styled) return;
-    var h = sp.parentElement;
-    var l = lum(cs(h).color);
-    sp.classList.add("dl-shimmer");
-    if (l !== null && l > 0.6) sp.classList.add("dl-on-dark");
-  });
-
-  /* ---------- stray cards outside groups (review cards, tiles …) ---------- */
-  document.querySelectorAll(".testimonial-card, .qual-card, .membership-card, .cred-custom-card, .appt-tile, .reel-card").forEach(function (c, i) {
-    makeCard(c, i);
-  });
-
-  /* ---------- buttons: gloss ---------- */
-  document.querySelectorAll(".btn-primary, .btn-secondary, .btn-dark, .btn-outline-primary").forEach(function (b, i) {
-    if (b.classList.contains("back-to-top") || b.querySelector(".dl-gloss")) return;
-    var pos = cs(b).position;
-    if (pos === "fixed" || pos === "sticky") return;
-    if (pos === "static") b.style.position = "relative";
-    b.classList.add("dl-btn");
-    var g = document.createElement("span");
-    g.className = "dl-gloss";
-    g.setAttribute("aria-hidden", "true");
-    g.style.setProperty("--dl-i", (i % 4) * 1.2 + "s");
-    b.appendChild(g);
-  });
-
-  /* ---------- reveal loop ---------- */
+  /* ---------- progress ribbon ---------- */
   var ticking = false;
-  function check() {
+  function progress() {
     ticking = false;
-    vh = innerHeight;
-    var h = root.scrollHeight - vh;
+    var h = root.scrollHeight - innerHeight;
     bar.style.transform = "scaleX(" + (h > 0 ? Math.min(1, scrollY / h) : 0) + ")";
-    // at the very bottom of the page nothing can scroll further up, so show everything on screen
-    var limit = scrollY >= h - 4 ? vh + 60 : vh * 0.92;
-    for (var i = pending.length - 1; i >= 0; i--) {
-      var el = pending[i];
-      var r = el.getBoundingClientRect();
-      if (r.top < limit && r.bottom > -40) {
-        pending.splice(i, 1);
-        reveal(el);
-      }
-    }
-  }
-  function reveal(el) {
-    el.classList.add("dl-in");
-    setTimeout(function () {
-      el.classList.remove("dl-hide", "dl-in", "dl-reveal", "dl-pop", "dl-title", "dl-side");
-      el.style.removeProperty("--dl-d");
-    }, 1300 + (parseInt(el.style.getPropertyValue("--dl-d"), 10) || 0));
   }
   function onScroll() {
-    if (!ticking) { ticking = true; requestAnimationFrame(check); }
+    if (!ticking) { ticking = true; requestAnimationFrame(progress); }
   }
   addEventListener("scroll", onScroll, { passive: true });
   addEventListener("resize", onScroll, { passive: true });
-  addEventListener("load", onScroll);
-  requestAnimationFrame(function () { requestAnimationFrame(check); });
-  // Safety: anything still hidden after a long wait near the top is shown.
-  setTimeout(check, 1500);
+
+  if (reduce) return; // static polish only
+
+  /* The heavy setup waits until the browser is idle so it never delays the
+     first paint. It first MEASURES everything, then applies all changes in
+     one batch (measuring after each change forces slow re-layouts). */
+  function setup() {
+    if (body !== document.body) return; // page was swapped meanwhile
+    var vh = innerHeight;
+    var writes = [];
+    var hidden = new Set();
+    var cards = new Set();
+
+    function inSet(el, set) {
+      for (var n = el; n && n !== body; n = n.parentElement) if (set.has(n)) return true;
+      return false;
+    }
+
+    function hide(el, kind, delay) {
+      if (inSet(el, hidden)) return;
+      var r = el.getBoundingClientRect();
+      if (r.top < vh * 0.9 && r.bottom > 0) return; // already on screen: leave it be
+      if (cs(el).animationName !== "none") return;  // has its own entrance
+      hidden.add(el);
+      writes.push(function () {
+        el.classList.add("dl-hide", "dl-reveal");
+        if (kind) el.classList.add(kind);
+        if (delay) el.style.setProperty("--dl-d", delay + "ms");
+      });
+    }
+
+    function positionLater(el) {
+      if (cs(el).position === "static") writes.push(function () { el.style.position = "relative"; });
+    }
+
+    function isVisualCard(el) {
+      var s = cs(el);
+      var bg = lum(s.backgroundColor);
+      return bg !== null || s.backgroundImage !== "none" || parseFloat(s.borderTopWidth) > 0 || s.boxShadow !== "none";
+    }
+
+    function unwrap(el) {
+      // Grid columns usually wrap the real card: descend to it.
+      while (el.children.length === 1) {
+        var c = el.children[0];
+        if (Math.abs(c.offsetWidth - el.offsetWidth) > 40 || c.offsetHeight < el.offsetHeight * 0.7) break;
+        el = c;
+      }
+      return el;
+    }
+
+    function makeCard(card, i) {
+      if (cards.has(card)) return;
+      cards.add(card);
+      positionLater(card);
+      var l = lum(cs(card).backgroundColor);
+      // icon bubbles bob gently
+      var icon = card.querySelector("[class*='icon']:not(i):not(svg):not(img), .btn-square, .tc-avatar");
+      if (!icon) icon = card.querySelector("i.fa, i.fas, i.far, i.fab, i.bi");
+      if (icon && icon.closest(".btn")) icon = null;
+      var zoom = [];
+      card.querySelectorAll("img").forEach(function (img) {
+        var p = img.parentElement;
+        if (p && p !== card && cs(p).overflow === "hidden") zoom.push(img);
+        else if (p === card && cs(card).overflow === "hidden") zoom.push(img);
+      });
+      writes.push(function () {
+        card.classList.add("dl-card");
+        var glow = document.createElement("span");
+        glow.className = "dl-glow";
+        glow.setAttribute("aria-hidden", "true");
+        card.appendChild(glow);
+        if (l !== null && l > 0.6) card.classList.add("dl-light");
+        if (icon) {
+          icon.classList.add("dl-icon");
+          icon.style.setProperty("--dl-i", (i % 5) * -0.6 + "s");
+        }
+        zoom.forEach(function (img) { img.classList.add("dl-zoom"); });
+      });
+    }
+
+    sections.forEach(function (section, sIndex) {
+      if (section.matches(".lx, .ah") || section.offsetHeight <= 160) return;
+
+      // 1) groups of similar boxes -> staggered cards
+      section.querySelectorAll("*").forEach(function (el) {
+        if (el.closest(SKIP) || inSet(el, cards)) return;
+        var kids = el.children;
+        if (kids.length < 2) return;
+        var sig = {};
+        var max = 0;
+        for (var k = 0; k < kids.length; k++) {
+          var key = kids[k].tagName + "." + (kids[k].classList[0] || "");
+          sig[key] = (sig[key] || 0) + 1;
+          if (sig[key] > max) max = sig[key];
+        }
+        if (max < 2 || max / kids.length < 0.6) return;
+        var ok = 0;
+        for (var j = 0; j < kids.length; j++) {
+          if (kids[j].offsetWidth >= 150 && kids[j].offsetHeight >= 70 && !/^(P|H\d|SPAN|A|LI|I|IMG|BR)$/.test(kids[j].tagName)) ok++;
+        }
+        if (ok < 2 || ok / kids.length < 0.6) return;
+        var visual = 0;
+        var list = [];
+        for (var n = 0; n < kids.length; n++) {
+          var c = unwrap(kids[n]);
+          list.push(c);
+          if (isVisualCard(c)) visual++;
+        }
+        list.forEach(function (c, idx) {
+          var isCard = visual >= 2 && isVisualCard(c) && !c.closest(".reels-track, [class*='reel'] .owl-stage");
+          if (isCard) makeCard(c, idx);
+          hide(kids[idx], isCard ? "dl-pop" : null, (idx % 6) * 60);
+        });
+      });
+
+      // 2) headings
+      section.querySelectorAll("h1, h2").forEach(function (h) {
+        if (h.closest(SKIP) || inSet(h, cards) || inSet(h, hidden)) return;
+        hide(h, "dl-title", 0);
+      });
+      // 3) supporting text, buttons, media
+      section.querySelectorAll("h3, h4, h5, h6, p, .btn, ul, img, iframe, video, .before-after-wrapper, form").forEach(function (el) {
+        if (el.closest(SKIP) || inSet(el, cards) || inSet(el, hidden)) return;
+        if (el.tagName === "IMG" || el.tagName === "IFRAME" || el.tagName === "VIDEO") hide(el, "dl-pop", 60);
+        else hide(el, null, el.tagName === "P" ? 60 : el.classList.contains("btn") ? 120 : 30);
+      });
+
+      // 4) floating decorations
+      var host = (section.matches(".ft") && section.querySelector(".ft-tile")) || section;
+      var hl = lum(cs(host).color);
+      var dark = hl !== null && hl > 0.6;
+      positionLater(host);
+      var deco = document.createElement("div");
+      deco.className = "dl-deco" + (dark ? " dl-dark" : "");
+      deco.setAttribute("aria-hidden", "true");
+      var count = 4;
+      for (var d = 0; d < count; d++) {
+        var shape = SHAPES[(d + sIndex) % SHAPES.length];
+        var s = document.createElement("span");
+        s.className = shape[0];
+        s.innerHTML = shape[1];
+        var left = d % 2 === 0 ? 1 + rand() * 3.5 : 95.5 - rand() * 3.5;
+        s.style.left = left + "%";
+        s.style.top = (8 + (d / count) * 80 + rand() * 6) + "%";
+        s.style.setProperty("--s", Math.round(14 + rand() * 20) + "px");
+        s.style.setProperty("--t", (7 + rand() * 6).toFixed(1) + "s");
+        s.style.setProperty("--dl-i", (-rand() * 8).toFixed(1) + "s");
+        deco.appendChild(s);
+      }
+      writes.push(function () { host.insertBefore(deco, host.firstChild); });
+    });
+
+    /* ---------- shimmering accent words ---------- */
+    document.querySelectorAll("h1 span, h2 span, h1 em, h2 em, h3 em").forEach(function (sp) {
+      if (sp.closest(".lx, .ah, .navbar, .dl-deco") || sp.children.length) return;
+      var styled = sp.classList.contains("text-primary") || cs(sp).fontStyle === "italic" || sp.tagName === "EM";
+      if (!styled) return;
+      var l = lum(cs(sp.parentElement).color);
+      writes.push(function () {
+        sp.classList.add("dl-shimmer");
+        if (l !== null && l > 0.6) sp.classList.add("dl-on-dark");
+      });
+    });
+
+    /* ---------- stray cards outside groups (review cards, tiles …) ---------- */
+    document.querySelectorAll(".testimonial-card, .qual-card, .membership-card, .cred-custom-card, .appt-tile, .reel-card").forEach(function (c, i) {
+      makeCard(c, i);
+    });
+
+    /* ---------- buttons: gloss ---------- */
+    document.querySelectorAll(".btn-primary, .btn-secondary, .btn-dark, .btn-outline-primary").forEach(function (b, i) {
+      if (b.classList.contains("back-to-top") || b.querySelector(".dl-gloss")) return;
+      var pos = cs(b).position;
+      if (pos === "fixed" || pos === "sticky") return;
+      writes.push(function () {
+        if (pos === "static") b.style.position = "relative";
+        b.classList.add("dl-btn");
+        var g = document.createElement("span");
+        g.className = "dl-gloss";
+        g.setAttribute("aria-hidden", "true");
+        g.style.setProperty("--dl-i", (i % 4) * 1.2 + "s");
+        b.appendChild(g);
+      });
+    });
+
+    /* ---------- apply everything at once ---------- */
+    writes.forEach(function (w) { w(); });
+
+    /* ---------- reveal on scroll ---------- */
+    function reveal(el) {
+      el.classList.add("dl-in");
+      setTimeout(function () {
+        el.classList.remove("dl-hide", "dl-in", "dl-reveal", "dl-pop", "dl-title", "dl-side");
+        el.style.removeProperty("--dl-d");
+      }, 750 + (parseInt(el.style.getPropertyValue("--dl-d"), 10) || 0));
+    }
+    if (!("IntersectionObserver" in window)) {
+      hidden.forEach(reveal);
+      return;
+    }
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (!e.isIntersecting) return;
+        io.unobserve(e.target);
+        reveal(e.target);
+      });
+    }, { rootMargin: "0px 0px -6% 0px" });
+    hidden.forEach(function (el) { io.observe(el); });
+    // At the very bottom nothing can scroll further, so show what is left on screen.
+    addEventListener("scroll", function () {
+      if (scrollY < root.scrollHeight - innerHeight - 4) return;
+      hidden.forEach(function (el) {
+        if (!el.classList.contains("dl-hide") || el.classList.contains("dl-in")) return;
+        if (el.getBoundingClientRect().top < innerHeight) { io.unobserve(el); reveal(el); }
+      });
+    }, { passive: true });
+  }
+
+  if ("requestIdleCallback" in window) requestIdleCallback(setup, { timeout: 700 });
+  else setTimeout(setup, 200);
 
   /* ---------- card spotlight follows the pointer ---------- */
   if (fine) {

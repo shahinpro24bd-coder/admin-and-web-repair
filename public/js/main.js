@@ -2,7 +2,8 @@
     "use strict";
 
     // Initiate the wowjs
-    new WOW().init();
+    // live:false — no page adds .wow boxes later, and watching every DOM change is slow.
+    new WOW({ live: false }).init();
 
 
     // Sticky Navbar
