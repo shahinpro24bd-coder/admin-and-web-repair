@@ -43,4 +43,6 @@ use the editor.
 - Every inner page uses the About-style `.ah` header and all pages share one `.ft` footer markup (V6 block in `public/redesign.css`); copy it verbatim between pages and reuse only strings that already have translations, so every language stays complete.
 <!-- AGENT-MEMORY:END -->
 - Admin data (site edits, appointment requests, patients, plans, appointments, invoices) lives in Lovable Cloud behind the `has_role(admin)` RLS check; the admin page signs in with Cloud auth, never a browser-stored password, because patient records must stay private.
+- Admin logins are usernames mapped to emails (`src/lib/admin-auth.ts`); the first admin is created through first-time setup on `/admin` (only while no admin exists) and further admins are added by an admin in Account → Admin logins via server functions, because a shipped default password gets rejected as weak and is unsafe.
+- `public/js/local-content.js` re-attaches its listeners on every run (no once-only global flag), because instant page swaps remove page-script listeners and re-run the file.
 - Admin page edits are stored in `site_content` (`texts` per language, `images`, `contact`) and merged on the server in `src/lib/site-content/server.ts`, so every visitor sees them; uploaded photos go to the private `site-images` bucket and are served through `/api/public/img/*`.
