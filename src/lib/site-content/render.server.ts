@@ -1,6 +1,7 @@
 import { getContentSnapshot, isSiteLang, SITE_LANGS, type SiteLang } from "./server";
 import { PAGE_SOURCE } from "./pages.server";
 import { renderPage } from "./transform";
+import { brandShareHead } from "./share-head";
 
 /**
  * Builds one public page: every string and image comes from the database, the
@@ -31,7 +32,7 @@ export async function renderSitePage(request: Request, slug: string): Promise<Re
 
   // Fully rendered pages are memoised per slug+language+content version, so a
   // repeat request skips the HTML parse/transform entirely.
-  const cacheKey = `${slug}|${lang}|${snapshot.version}|${url.pathname}`;
+  const cacheKey = `${url.origin}|${slug}|${lang}|${snapshot.version}|${url.pathname}`;
   if (!editMode) {
     const cached = RENDER_CACHE.get(cacheKey);
     if (cached) return htmlResponse(cached, snapshot.version, false, !isSiteLang(langParam));
@@ -75,6 +76,7 @@ export async function renderSitePage(request: Request, slug: string): Promise<Re
   if (!editMode) html = html.replace(/<head([^>]*)>/i, '<head$1><script src="/js/speed.js"></script>');
   const headIndex = html.lastIndexOf("</head>");
   if (headIndex !== -1) html = html.slice(0, headIndex) + links.join("") + html.slice(headIndex);
+  html = brandShareHead(html, url.origin);
 
   if (!editMode) {
     if (RENDER_CACHE.size > 64) RENDER_CACHE.clear();

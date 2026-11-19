@@ -36,6 +36,7 @@ use the editor.
 - Browser-saved admin edits use versioned storage keys; bump the version when content is replaced wholesale so stale edits never re-apply.
 
 <!-- AGENT-MEMORY:BEGIN -->
+- Public share metadata is finalized in `share-head.ts` after translation, using the request origin; rendered HTML caches include that origin so share images never leak another host's URL.
 - The public site's visual design lives in `public/redesign.css`, linked last in every `src/site/*.html` head; restyle there instead of editing the older per-page CSS so one layer controls the look.
 - Restructure page markup freely but keep every visible text string byte-identical, because translations are keyed by a hash of the English text.
 - Home hero/intro and About hero/intro use the `lx-`, `ax-`, `ah-`, `ab2-` class prefixes (V5 block at the end of `public/redesign.css`); never reuse `hv-`, `hx-`, `hab-`, `abx-`, because dead legacy rules for those prefixes remain earlier in the file.
